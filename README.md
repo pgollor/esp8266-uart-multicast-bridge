@@ -25,7 +25,7 @@ The controller transmit all information which comes over the TCP connection dire
 
 ### Usage
 
-Try the `first_try.py` width python3.
+Try the `first_try.py` with python3.
 This script will set the esid and epass to connect to and wait for multicast packages.
 
 
