@@ -1,7 +1,7 @@
-Aruino Code for Esp8266
-=======================
+ESP8266 UART Multicast Bridge
+=============================
 
-Transmit UART data as multicast UDP package.
+Transmit UART data as multicast package.
 
 License
 -------
@@ -30,6 +30,9 @@ This conenction can be used to find the controller in your local network.<br>
 The controller transmit all information which comes over the TCP connection directly to UART.
 
 ### Usage
+
+Try the `first_try.py` width python3.
+This script will set the esid and epass to connect to and wait for multicast packages.
 
 
 Other libraries and sources
