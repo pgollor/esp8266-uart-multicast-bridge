@@ -7,7 +7,7 @@ import numpy as np
 
 
 # without the last digits after the last point for broadcast
-BROADCAST_NET = '192.168.64.'
+BROADCAST_NET = '192.168.0.'
 
 # broadcast port
 BROADCAST_PORT = 9999
@@ -160,26 +160,23 @@ def main():
 	
 	logging.info("client is on: %s:%i", cl_ip, cl_port)
 
-	# Send to uart.	
+
 	try:
+		# The controller will be send this to UART.
 		sendToServer(cl_ip, cl_port, 'hallo')
-	except socket.timeout as t:
-		logging.error('tcp transmit: %s', t)
-	# end try
-	
-	# Try to set ssid
-	try:
+		
+		# Try to set ssid
 		sendToServer(cl_ip, cl_port, '+++esp-set-ssid:WLANName')
+		
+		# Try to set password
+		sendToServer(cl_ip, cl_port, '+++esp-set-pass:Geheimespasswort')
+		
+		# Reset controller
+		sendToServer(cl_ip, cl_port, '+++esp-reset:')
 	except socket.timeout as t:
 		logging.error('tcp transmit: %s', t)
 	# end try
 
-	# Try to set password
-	try:
-		sendToServer(cl_ip, cl_port, '+++esp-set-pass:Geheimespasswort')
-	except socket.timeout as t:
-		logging.error('tcp transmit: %s', t)
-	# end try
 	
 	
 	# start multicast client
