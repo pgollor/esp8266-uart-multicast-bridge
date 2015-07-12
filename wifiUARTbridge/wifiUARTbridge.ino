@@ -369,6 +369,8 @@ static inline void handle_udp_broad_req(void)
 		g_udp.print(MULTICAST_IP);
 		g_udp.write(':');
 		g_udp.print(MULTICAST_PORT);
+    g_udp.write(':');
+    g_udp.print(ESP.getChipId(), DEC);
 		g_udp.write("\r\n");
 		g_udp.endPacket();
 	}
@@ -426,6 +428,13 @@ static inline void handle_tcp_req()
 #if DEBUG >= 1
 			Serial.println("reset esp8266");
 #endif
+
+      // send reset information
+      String s = "+++reset\r\n";
+      multi_transmit(&s);
+
+			// perform restart
+			ESP.restart();
 		}
 		// ... set SSID
 		else if(req.startsWith(PROTO_SET_SSID))
@@ -571,6 +580,9 @@ void setup()
 	Serial.begin(115200);
 	Serial.setDebugOutput(false);
 	Serial.println("\r\n\r\n");
+#if DEBUG >= 1
+	Serial.println(ESP.getChipId());
+#endif
 
 	delay(10);
 
