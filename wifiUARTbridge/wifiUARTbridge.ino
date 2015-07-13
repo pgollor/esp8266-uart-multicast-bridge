@@ -1,5 +1,5 @@
 /**
- * @file wifiSerialBridge.ino
+ * @file wifiUARTbridge.ino
  * 
  * @date   2015-06-10
  * @author Pascal Gollor (http://www.pgollor.de/cms/)
@@ -45,7 +45,7 @@ IPAddress ipMulti(239, 0, 0, 57); ///< Multicast IP for transmission as tuple.
  * - 2: some more output
  * - 3: many more output
  */
-#define DEBUG 1
+uint8_t g_debug = 1;
 
 /**
  * @brief Wait for on complete line with new line character(s) at the end.
@@ -79,6 +79,9 @@ IPAddress ipMulti(239, 0, 0, 57); ///< Multicast IP for transmission as tuple.
 
 #define PROTO_SET_PASS "set-pass" ///< Set password for AP in client mode.
 #define PROTO_SET_PASS_LENGTH 8 ///< Length of PROTO_SET_PASS string.
+
+#define PROTO_SET_DEBUG "set-debug" ///< Set debug level.
+#define PROTO_SET_DEBUG_LENGTH 9 ///< Length of PROTO_SET_DEBUG
 /// @}
 
 
@@ -126,28 +129,31 @@ String g_epass;
  */
 uint8_t testWifi(void)
 {
-#if DEBUG >= 1
-	Serial.println("Waiting for Wifi to connect");
-#endif
+	if (g_debug >= 1)
+	{
+		Serial.println("Waiting for Wifi to connect");
+	}
 
 	for (uint8_t i = 0; i < 20; i++)
 	{
 		if (WiFi.status() == WL_CONNECTED)
 		{
-#if DEBUG >= 1
-			Serial.println("");
-			Serial.println("WiFi connected with client IP:");
-			Serial.println(WiFi.localIP());
-#endif
+			if (g_debug >= 1)
+			{
+				Serial.println("");
+				Serial.println("WiFi connected with client IP:");
+				Serial.println(WiFi.localIP());
+			}
 
 			return(20);
 		}
 
 		delay(500);
 
-#if DEBUG >= 1
-		Serial.print(WiFi.status());
-#endif
+		if (g_debug >= 1)
+		{
+			Serial.print(WiFi.status());
+		}
 	}
 
 	//#if DEBUG >= 1
@@ -163,47 +169,53 @@ uint8_t testWifi(void)
  */
 static inline void writeWifiEEprom(void)
 {
-#if DEBUG >= 1
-  Serial.println("clearing eeprom");
-#endif
+	if (g_debug >= 1)
+	{
+		Serial.println("clearing eeprom");
+	}
 
-  for (uint8_t i = 0; i < 96; i++)
-  {
-    EEPROM.write(i, 0);
-  }
 
-#if DEBUG >= 1
-  Serial.println("Writing ssid to eeprom.");
-  Serial.println(g_esid.length());
-#endif
+	for (uint8_t i = 0; i < 96; i++)
+	{
+		EEPROM.write(i, 0);
+	}
 
-  // set ssid
-  for (uint8_t i = 0; i < g_esid.length(); i++)
-  {
-    EEPROM.write(i, g_esid[i]);
-#if DEBUG >= 2
-    Serial.print("wrote: ");
-    Serial.println(g_esid[i]);
-#endif
-  }
+	if (g_debug >= 1)
+	{
+		Serial.println("Writing ssid to eeprom.");
+		Serial.println(g_esid.length());
+	}
 
-#if DEBUG >= 1
-  Serial.println("Writing pass to eeprom.");
-  Serial.println(g_epass.length());
-#endif
+	// set ssid
+	for (uint8_t i = 0; i < g_esid.length(); i++)
+	{
+		EEPROM.write(i, g_esid[i]);
+		if (g_debug >= 2)
+		{
+			Serial.print("wrote: ");
+			Serial.println(g_esid[i]);
+		}
+	}
 
-  // set password
-  for (uint8_t i = 0; i < g_epass.length(); i++)
-  {
-    EEPROM.write(i + 32, g_epass[i]);
-#if DEBUG >= 2
-    Serial.print("wrote: ");
-    Serial.println(g_epass[i]);
-#endif
-  }
+	if (g_debug >= 1)
+	{
+		Serial.println("Writing pass to eeprom.");
+		Serial.println(g_epass.length());
+	}
 
-  EEPROM.commit();
-  EEPROM.end();
+	// set password
+	for (uint8_t i = 0; i < g_epass.length(); i++)
+	{
+		EEPROM.write(i + 32, g_epass[i]);
+		if (g_debug >= 2)
+		{
+			Serial.print("wrote: ");
+			Serial.println(g_epass[i]);
+		}
+	}
+
+	EEPROM.commit();
+	EEPROM.end();
 } // writeWifiEEprom
 
 
@@ -247,56 +259,59 @@ static inline void readWifiEEprom(void)
 	WiFi.mode(WIFI_STA);
 
 
-	EEPROM.begin(512);
-
-#if DEBUG >= 1
-	Serial.println("Reading ssid from EEprom");
-#endif
+	if (g_debug >= 1)
+	{
+		Serial.println("Reading ssid from EEprom");
+	}
 
 	esid.reserve(32);
 	for (uint8_t i = 0; i < 32; i++)
 	{
 		esid += char(EEPROM.read(i));
 
-#if DEBUG >= 1
-		if (i % 5 == 0)
+		if (g_debug >= 1)
 		{
-			Serial.print('.');
+			if (i % 5 == 0)
+			{
+				Serial.print('.');
+			}
 		}
-#endif
 	}
 
 	esid.trim();
 
-#if DEBUG >= 1
-	Serial.println();
-	Serial.print("SSID: ");
-	Serial.println(esid.c_str());
-	Serial.println("");
-	Serial.println("Read password from EEprom");
-#endif
+	if (g_debug >= 1)
+	{
+		Serial.println();
+		Serial.print("SSID: ");
+		Serial.println(esid.c_str());
+		Serial.println("");
+		Serial.println("Read password from EEprom");
+	}
 
 	epass.reserve(64);
 	for (uint8_t i = 32; i < 96; i++)
 	{
 		epass += char(EEPROM.read(i));
 
-#if DEBUG >= 1
-		if (i % 5 == 0)
+		if (g_debug >= 1)
 		{
-			Serial.print('.');
+			if (i % 5 == 0)
+			{
+				Serial.print('.');
+			}
 		}
-#endif
 	}
 
 	epass.trim();
 
-#if DEBUG >= 1
-	Serial.println();
-	Serial.print("password: ");
-	Serial.println(epass.c_str());
-	Serial.println("");
-#endif
+	if (g_debug >= 1)
+	{
+		Serial.println();
+		Serial.print("password: ");
+		Serial.println(epass.c_str());
+		Serial.println("");
+	}
 
 	if ( esid.length() > 1 )
 	{
@@ -330,10 +345,11 @@ static inline void handle_udp_broad_req(void)
 		return;
 	}
 
-#if DEBUG >= 3
-	Serial.print("packageSize: ");
-	Serial.println(packetSize);
-#endif
+	if (g_debug >= 3)
+	{
+		Serial.print("packageSize: ");
+		Serial.println(packetSize);
+	}
 
 	// get data from client
 	int16_t len = g_udp.read(packetBuffer, 255);
@@ -345,11 +361,12 @@ static inline void handle_udp_broad_req(void)
 	// add end for string
 	packetBuffer[len] = 0;
 	String buffStr(packetBuffer);
-#if DEBUG >= 2
-	print_millis;
-	Serial.print("received: ");
-	Serial.println(buffStr);
-#endif
+	if (g_debug >= 2)
+	{
+		print_millis;
+		Serial.print("received: ");
+		Serial.println(buffStr);
+	}
 
 	// check if string is for me?
 	if (buffStr.startsWith(PROTO_HELLO))
@@ -369,11 +386,111 @@ static inline void handle_udp_broad_req(void)
 		g_udp.print(MULTICAST_IP);
 		g_udp.write(':');
 		g_udp.print(MULTICAST_PORT);
-    g_udp.write(':');
-    g_udp.print(ESP.getChipId(), DEC);
+		g_udp.write(':');
+		g_udp.print(ESP.getChipId(), DEC);
 		g_udp.write("\r\n");
 		g_udp.endPacket();
 	}
+}
+
+
+/**
+ * @brief Check if string is an command for me?
+ * @param commandStr String
+ * @return True or False
+ *
+ * If string is a valid command, the String will be erased.
+ */
+bool find_command(String* commandStr)
+{
+	if (! commandStr->startsWith(PROTO_START))
+	{
+		return false;
+	}
+
+	String tmpStr = commandStr->substring(PROTO_START_LENGTH);
+	tmpStr.trim();
+
+	// ... Reset command
+	if(tmpStr.startsWith(PROTO_RESET))
+	{
+		if (g_debug >= 1)
+		{
+			Serial.println("reset esp8266");
+		}
+
+		// send reset information
+		String s = "+++reset\r\n";
+		multi_transmit(&s);
+
+		// wait
+		delay(500);
+
+		// perform reset
+		ESP.restart();
+
+		return true;
+	}
+	// ... debug level
+	else if(tmpStr.startsWith(PROTO_SET_DEBUG))
+	{
+		// get debug level only
+		tmpStr = tmpStr.substring(PROTO_SET_DEBUG_LENGTH + 1);
+
+		g_debug = tmpStr.toInt();
+
+		if (g_debug < 0 || g_debug > 5)
+		{
+			g_debug = 1;
+			Serial.println("Wrong level.");
+		}
+
+		if (g_debug >= 1)
+		{
+			Serial.print("Set debug level to: ");
+			Serial.println(tmpStr);
+		}
+
+		// save to EEProm
+		EEPROM.write(32 + 64, g_debug);
+		EEPROM.commit();
+		EEPROM.end();
+
+		return true;
+	}
+	// ... set SSID
+	else if(tmpStr.startsWith(PROTO_SET_SSID))
+	{
+		tmpStr = tmpStr.substring(PROTO_SET_SSID_LENGTH + 1);
+
+		if (g_debug >= 1)
+		{
+			Serial.print("Set ssid to: ");
+			Serial.println(tmpStr);
+		}
+
+		g_esid = tmpStr;
+
+		return true;
+	}
+	// ... set password for SSID
+	else if(tmpStr.startsWith(PROTO_SET_PASS))
+	{
+		tmpStr = tmpStr.substring(PROTO_SET_PASS_LENGTH + 1);
+
+		if (g_debug >= 1)
+		{
+			Serial.print("Set passwortd to: ");
+			Serial.println(tmpStr);
+		}
+
+		g_epass = tmpStr;
+		writeWifiEEprom();
+
+		return true;
+	}
+
+	return false;
 }
 
 
@@ -389,9 +506,11 @@ static inline void handle_tcp_req()
 	}
 
 	// wait for data from client
-#if DEBUG >= 2
-	Serial.println("New connection. Wait for data.");
-#endif
+	if (g_debug >= 2)
+	{
+		Serial.println("New connection. Wait for data.");
+	}
+
 	while(!client.available())
 	{
 		delay(1);
@@ -406,63 +525,19 @@ static inline void handle_tcp_req()
 	client.flush();
 
 	// Some debug output.
-#if DEBUG >= 2
-	Serial.print("Date Received From: ");
-	Serial.print(client.remoteIP());
-	Serial.print(":");
-	Serial.println(client.remotePort());
-	Serial.print("data: ");
-	Serial.println(req);
-#endif
+	if (g_debug >= 2)
+	{
+		Serial.print("Date Received From: ");
+		Serial.print(client.remoteIP());
+		Serial.print(":");
+		Serial.println(client.remotePort());
+		Serial.print("data: ");
+		Serial.println(req);
+	}
 
 
 	// Check if string is an command for me?
-	if (req.startsWith(PROTO_START))
-	{
-		req = req.substring(PROTO_START_LENGTH);
-		req.trim();
-
-		// ... Reset command
-		if(req.startsWith(PROTO_RESET))
-		{
-#if DEBUG >= 1
-			Serial.println("reset esp8266");
-#endif
-
-      // send reset information
-      String s = "+++reset\r\n";
-      multi_transmit(&s);
-
-			// perform restart
-			ESP.restart();
-		}
-		// ... set SSID
-		else if(req.startsWith(PROTO_SET_SSID))
-		{
-			req = req.substring(PROTO_SET_SSID_LENGTH + 1);
-
-#if DEBUG >= 1
-			Serial.print("Set ssid to: ");
-			Serial.println(req);
-#endif
-
-			g_esid = req;
-		}
-		// ... set password for SSID
-		else if(req.startsWith(PROTO_SET_PASS))
-		{
-			req = req.substring(PROTO_SET_PASS_LENGTH + 1);
-
-#if DEBUG >= 1
-			Serial.print("Set passwortd to: ");
-			Serial.println(req);
-#endif
-
-			g_epass = req;
-			writeWifiEEprom();
-		}
-	}
-	else
+	if (! find_command(&req))
 	{
 		req += '\n';
 
@@ -481,11 +556,12 @@ static inline void handle_tcp_req()
  */
 void multi_transmit(String* buff)
 {
-#if DEBUG >= 3
-	Serial.print("Transmit ");
-	Serial.print(buff->length());
-	Serial.println(" byte.");
-#endif
+	if (g_debug >= 3)
+	{
+		Serial.print("Transmit ");
+		Serial.print(buff->length());
+		Serial.println(" byte.");
+	}
 
 	if (g_connectionType == WIFI_AP)
 	{
@@ -516,20 +592,24 @@ static inline void handle_uart_req()
 		return;
 	}
 
-#if DEBUG >= 3
-	Serial.print("Serial data available: ");
-	Serial.println(Serial.available());
-#endif
+	if (g_debug >= 3)
+	{
+		Serial.print("Serial data available: ");
+		Serial.println(Serial.available());
+	}
 
 	// check for serial data
 	while (Serial.available())
 	{
 		counter++;
-		g_inputString += (char)Serial.read();
+		char in = (char)Serial.read();
 
-#if DEBUG >= 4
-		Serial.println(in);
-#endif
+		if (g_debug >= 4)
+		{
+			Serial.println(in);
+		}
+
+		g_inputString += in;
 
 #if UART_RECEIVE_HOLE_LINES == 1
 		if (in == '\n')
@@ -548,6 +628,14 @@ static inline void handle_uart_req()
 		//delay(1);
 	}
 
+	// check for commands
+	if (find_command(&g_inputString))
+	{
+		g_inputString = "";
+		return;
+	}
+
+
 #if UART_RECEIVE_HOLE_LINES == 0
 	if (counter > 0)
 	{
@@ -558,11 +646,12 @@ static inline void handle_uart_req()
 	// Check new line characters.
 	if (g_inputString != "" && g_inputString.endsWith("\r\n"))
 	{
-#if DEBUG >= 1
-		print_millis;
-		Serial.print("got from uart: ");
-		Serial.println(g_inputString);
-#endif
+		if (g_debug >= 1)
+		{
+			print_millis;
+			Serial.print("got from uart: ");
+			Serial.println(g_inputString);
+		}
 
 		// transmit
 		uart_transmit(&g_inputString);
@@ -580,9 +669,6 @@ void setup()
 	Serial.begin(115200);
 	Serial.setDebugOutput(false);
 	Serial.println("\r\n\r\n");
-#if DEBUG >= 1
-	Serial.println(ESP.getChipId());
-#endif
 
 	delay(10);
 
@@ -593,32 +679,52 @@ void setup()
 	g_esid.reserve(32);
 	g_epass.reserve(64);
 
+	// EEProm start Address
+	EEPROM.begin(512);
+
 	// try to read ssid and passwort from eeprom
 	readWifiEEprom();
 
+	// Read debug level from EEProm.
+	g_debug = EEPROM.read(32 + 64);
 
+
+	// Show chip id.
+	if (g_debug >= 1)
+	{
+		Serial.print("Debug level: ");
+		Serial.println(g_debug);
+		Serial.print("Chip ID: ");
+		Serial.println(ESP.getChipId());
+	}
+
+	// Start UDP Server.
 	g_udp.begin(UDP_PORT);
-#if DEBUG >= 2
-	Serial.println("Udp server for broadcast information started.");
-#endif
+	if (g_debug >= 2)
+	{
+		Serial.println("Udp server for broadcast information started.");
+	}
 
+	// Start TCP server.
 	g_server.begin();
-#if DEBUG >= 2
-	Serial.println("Tcp server started.");
-#endif
+	if (g_debug >= 2)
+	{
+		Serial.println("Tcp server started.");
+	}
 
+	// Print Serial and WiFi information.
+	if (g_debug >= 3)
+	{
+		Serial.print("rx enabled for uart: ");
+		Serial.println(Serial.isRxEnabled());
 
-#if DEBUG >= 3
-	Serial.print("rx enabled for uart: ");
-	Serial.println(Serial.isRxEnabled());
+		Serial.print("tx enabled for uart: ");
+		Serial.println(Serial.isTxEnabled());
 
-	Serial.print("tx enabled for uart: ");
-	Serial.println(Serial.isTxEnabled());
-
-	Serial.println("-- WifI info --");
-	WiFi.printDiag(Serial);
-	Serial.println("-- WifI info --");
-#endif
+		Serial.println("-- WifI info --");
+		WiFi.printDiag(Serial);
+		Serial.println("-- WifI info --");
+	}
 }
 
 
