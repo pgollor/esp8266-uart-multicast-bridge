@@ -22,7 +22,7 @@
 
 #define MULTICAST_IP   "239.0.0.57" ///< Multicast IP for transmission as string.
 #define MULTICAST_PORT 12345 ///< Multicast port for transmission.
-IPAddress ipMulti(239, 0, 0, 57); ///< Multicast IP for transmission as tuple.
+static IPAddress ipMulti(239, 0, 0, 57); ///< Multicast IP for transmission as tuple.
 /// @}
 
 
@@ -100,11 +100,14 @@ String g_inputString = "";
 /// wifi connection type
 int8_t g_connectionType = -1;
 
-/// broadcast server
+/// Server handle for broadcast receiving.
 WiFiUDP g_udp;
 
-/// tcp server
+/// Server handle for tcp Request.
 WiFiServer g_server(TCP_PORT);
+
+/// Global TCP client handle.
+WiFiClient g_tcpClient;
 
 /// global package buffer
 char packetBuffer[255];
@@ -494,13 +497,14 @@ bool find_command(String* commandStr)
 }
 
 
-/// handle tcp request
+/// Handle TCP request.
 static inline void handle_tcp_req()
 {
-	WiFiClient client = g_server.available();
+	//WiFiClient client = g_server.available();
+	g_tcpClient = g_server.available();
 
 	// return if no client is connected
-	if (!client)
+	if (!g_tcpClient)
 	{
 		return;
 	}
@@ -511,26 +515,26 @@ static inline void handle_tcp_req()
 		Serial.println("New connection. Wait for data.");
 	}
 
-	while(!client.available())
+	while(!g_tcpClient.available())
 	{
 		delay(1);
 	}
 
 	// get first line
-	String req = client.readStringUntil('\n');
+	String req = g_tcpClient.readStringUntil('\n');
 	if (!req.endsWith("\r"))
 	{
 		return;
 	}
-	client.flush();
+	g_tcpClient.flush();
 
 	// Some debug output.
 	if (g_debug >= 2)
 	{
 		Serial.print("Date Received From: ");
-		Serial.print(client.remoteIP());
+		Serial.print(g_tcpClient.remoteIP());
 		Serial.print(":");
-		Serial.println(client.remotePort());
+		Serial.println(g_tcpClient.remotePort());
 		Serial.print("data: ");
 		Serial.println(req);
 	}
@@ -546,7 +550,7 @@ static inline void handle_tcp_req()
 	}
 
 	// Send data back to client.
-	client.print(req);
+	g_tcpClient.print(req);
 } // handle_tcp_req
 
 
@@ -563,6 +567,7 @@ void multi_transmit(String* buff)
 		Serial.println(" byte.");
 	}
 
+	/*
 	if (g_connectionType == WIFI_AP)
 	{
 		g_udp.beginPacketMulticast(ipMulti, MULTICAST_PORT, WiFi.softAPIP(), 1);
@@ -571,9 +576,28 @@ void multi_transmit(String* buff)
 	{
 		g_udp.beginPacketMulticast(ipMulti, MULTICAST_PORT, WiFi.localIP(), 1);
 	}
+	*/
+	IPAddress ip = (192, 168, 64, 255);
+	g_udp.beginPacket(ip, 9999);
+	//g_udp.beginPacketMulticast(ip, MULTICAST_PORT, WiFi.localIP(), 1);
+	//g_udp.beginPacketMulticast(ipMulti, MULTICAST_PORT, WiFi.localIP(), 1);
 
 	g_udp.print(*buff);
-	g_udp.endPacket();
+
+	if (g_udp.endPacket() == 0)
+	{
+		if (g_debug >= 1)
+		{
+			Serial.println("Can not send package.");
+		}
+	}
+	else
+	{
+		if (g_debug >= 1)
+		{
+			Serial.println("Successfully send.");
+		}
+	}
 
 	// clear buffer
 	*buff = "";
@@ -702,7 +726,7 @@ void setup()
 	g_udp.begin(UDP_PORT);
 	if (g_debug >= 2)
 	{
-		Serial.println("Udp server for broadcast information started.");
+		Serial.println("UDP server for broadcast information started.");
 	}
 
 	// Start TCP server.

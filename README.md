@@ -15,11 +15,11 @@ Information
 - USB to UART Adapter to flash the ESP8266
 
 ### General
- - UART Baudrate: 115200
- - Multicast IP: 239.0.0.57
- - Milticast Port: 12345
- - TCP Port: 9999
- - UDP Port: 9999
+ - UART Baudrate: `115200`
+ - Multicast IP: `239.0.0.57`
+ - Milticast Port: `12345`
+ - TCP Port: `9999`
+ - UDP Port: `9999`
 
 The Controller listen for Broadcast messages on th given UDP Port.
 This connection can be used to find the controller in your local network.<br>
